@@ -490,4 +490,467 @@ function runPadanan(){
   });
   shuffle(pairs.slice()).forEach(it=>{
     const c=el(`<button class="match-card snd" data-noblip>
-      <span class="mc-ico" style="color:${it.color}">${ICONS.s
+      <span class="mc-ico" style="color:${it.color}">${ICONS.speaker}</span>
+      <span class="mini-eq"><i></i><i></i><i></i></span>
+      <span class="mc-name hidden">${it.name}</span></button>`);
+    c.onclick=()=>{
+      playItem(it,c,null);
+      if(lock||c.classList.contains('locked')) return;
+      colS.querySelectorAll('.selected').forEach(x=>x.classList.remove('selected'));
+      c.classList.add('selected'); selSnd=it; check();
+    };
+    colS.appendChild(c);
+  });
+  function check(){
+    if(!(selPic&&selSnd)) return;
+    lock=true;
+    const pc=[...colP.children].find(x=>x.classList.contains('selected'));
+    const sc=[...colS.children].find(x=>x.classList.contains('selected'));
+    if(selPic.id===selSnd.id){
+      setTimeout(()=>{
+        pc.classList.remove('selected'); sc.classList.remove('selected');
+        pc.classList.add('locked'); sc.classList.add('locked');
+        sc.querySelector('.mc-name').classList.remove('hidden');
+        sc.style.setProperty('--mc', selPic.color);
+        sfx.correct(); burstAtEl(pc,14);
+        done++; setProgress(done,pairs.length,state.act.color);
+        selPic=selSnd=null; lock=false;
+        if(done===pairs.length) setTimeout(()=>finishActivity(pairs,pairs+wrong,'padanan tepat'),900);
+      },650);
+    }else{
+      setTimeout(()=>{
+        [pc,sc].forEach(x=>{ x.classList.remove('wrong'); void x.offsetWidth; x.classList.add('wrong'); });
+        sfx.wrong(); wrong++;
+        pc.classList.remove('selected'); sc.classList.remove('selected');
+        selPic=selSnd=null; lock=false;
+      },500);
+    }
+  }
+}
+
+/* 3 · TARIK DAN LETAK (seret ATAU tekan-tekan — mesra sentuhan) */
+function runDragdrop(){
+  const cfg=LV().cfg, pool=LV().pool;
+  const items=sample(pool,cfg.drag);
+  let mistakes=0, placed=0, selChip=null;
+  const A=actShell('Tarik perkataan ke kotak di bawah gambar yang betul. Tekan gambar untuk mendengar bunyinya! <span class="hint">Boleh juga tekan perkataan dahulu, kemudian tekan kotaknya.</span>');
+  const slotsEl=el('<div class="dd-slots"></div>'); A.appendChild(slotsEl);
+  const tray=el('<div class="dd-tray"></div>'); A.appendChild(tray);
+  setProgress(0,items.length,state.act.color);
+  shuffle(items.slice()).forEach(it=>{
+    const s=el(`<div class="dd-slot" data-id="${it.id}">
+      <button class="dd-pic" data-noblip title="Dengar bunyi">${svgOf(it)}</button>
+      <div class="dd-drop"><span>Letak di sini</span></div></div>`);
+    const pic=s.querySelector('.dd-pic');
+    pic.onclick=()=>playItem(it,pic,null);
+    s.querySelector('.dd-drop').addEventListener('click',()=>{
+      if(selChip && !s.classList.contains('filled')){ const c=selChip; clearSel(); place(c,s); }
+    });
+    slotsEl.appendChild(s);
+  });
+  function clearSel(){ document.querySelectorAll('.dd-chip.selected').forEach(x=>x.classList.remove('selected')); selChip=null; }
+  function slotFromPoint(x,y){ const t=document.elementFromPoint(x,y); return t?t.closest('.dd-slot'):null; }
+  function place(chip,slot){
+    const it=byId[chip.dataset.id];
+    if(chip.dataset.id===slot.dataset.id){
+      chip.classList.add('placed'); chip.classList.remove('selected');
+      const drop=slot.querySelector('.dd-drop');
+      drop.innerHTML=''; drop.appendChild(chip);
+      slot.classList.add('filled'); drop.classList.add('filled');
+      sfx.correct(); burstAtEl(drop,14);
+      placed++; setProgress(placed,items.length,state.act.color);
+      setTimeout(()=>playItem(it,slot.querySelector('.dd-pic'),null),400);
+      if(placed===items.length) setTimeout(()=>finishActivity(items.length,items.length+mistakes,'padanan betul'),1100);
+    }else{
+      sfx.wrong(); mistakes++;
+      slot.classList.remove('shake-x'); void slot.offsetWidth; slot.classList.add('shake-x');
+      setTimeout(()=>slot.classList.remove('shake-x'),520);
+    }
+  }
+  shuffle(items.slice()).forEach(it=>{
+    const chip=el(`<button class="dd-chip" data-id="${it.id}">${it.name}</button>`);
+    let ds=null;
+    chip.addEventListener('pointerdown',e=>{
+      if(chip.classList.contains('placed')) return;
+      e.preventDefault(); ac();
+      ds={x:e.clientX,y:e.clientY,moved:false};
+      try{ chip.setPointerCapture(e.pointerId); }catch(_){}
+    });
+    chip.addEventListener('pointermove',e=>{
+      if(!ds) return;
+      if(!ds.moved && Math.hypot(e.clientX-ds.x,e.clientY-ds.y)>8){
+        ds.moved=true; chip.classList.add('dragging'); clearSel();
+      }
+      if(ds.moved){
+        chip.style.left=e.clientX+'px'; chip.style.top=e.clientY+'px';
+        document.querySelectorAll('.dd-slot.over').forEach(x=>x.classList.remove('over'));
+        const s=slotFromPoint(e.clientX,e.clientY);
+        if(s && !s.classList.contains('filled')) s.classList.add('over');
+      }
+    });
+    chip.addEventListener('pointerup',e=>{
+      if(!ds) return;
+      const moved=ds.moved; ds=null;
+      chip.classList.remove('dragging'); chip.style.left=chip.style.top='';
+      document.querySelectorAll('.dd-slot.over').forEach(x=>x.classList.remove('over'));
+      if(moved){
+        const s=slotFromPoint(e.clientX,e.clientY);
+        if(s && !s.classList.contains('filled')) place(chip,s);
+      }else{
+        clearSel(); chip.classList.add('selected'); selChip=chip;
+      }
+    });
+    chip.addEventListener('pointercancel',()=>{
+      if(ds){ ds=null; chip.classList.remove('dragging'); chip.style.left=chip.style.top=''; }
+    });
+    tray.appendChild(chip);
+  });
+}
+
+/* 4 · MEMORI BUNYI (kad bunyi memainkan bunyi apabila dibalikkan) */
+function runMemori(){
+  const cfg=LV().cfg, pool=LV().pool;
+  const items=sample(pool,cfg.mem);
+  const cols=cfg.mem<=3?3:4;
+  let open1=null, lock=false, attempts=0, matched=0;
+  const A=actShell('Buka kad untuk <b>mendengar bunyi</b> atau melihat <b>gambar</b>. Cari pasangan bunyi dan gambar yang sama!');
+  const grid=el(`<div class="mem-grid" style="--cols:${cols}"></div>`); A.appendChild(grid);
+  setProgress(0,items.length,state.act.color);
+  function mk(it,type){
+    const back = type==='pic' ? svgOf(it) : `<span class="snd-face" style="color:${it.color}">${ICONS.speaker}<b>BUNYI</b></span>`;
+    const c=el(`<button class="mem-card ${type}" data-id="${it.id}" data-noblip>
+      <div class="mem-inner">
+        <div class="mem-face front"><b>?</b></div>
+        <div class="mem-face back">${back}</div>
+      </div></button>`);
+    c.onclick=()=>{
+      if(lock||c.classList.contains('matched')||c===open1) return;
+      c.classList.add('open'); sfx.flip();
+      if(type==='snd') setTimeout(()=>{ ac(); it.sound(); },300);
+      if(!open1){ open1=c; return; }
+      const a=open1, b=c; open1=null; attempts++; lock=true;
+      if(a.dataset.id===b.dataset.id){
+        setTimeout(()=>{
+          a.classList.add('matched'); b.classList.add('matched');
+          sfx.correct(); burstAtEl(b,12);
+          matched++; setProgress(matched,items.length,state.act.color);
+          lock=false;
+          if(matched===items.length) setTimeout(()=>finishActivity(items.length,Math.max(attempts,items.length),'padanan tepat'),900);
+        },500);
+      }else{
+        setTimeout(()=>sfx.wrong(),200);
+        setTimeout(()=>{ a.classList.remove('open'); b.classList.remove('open'); lock=false; },1000);
+      }
+    };
+    return c;
+  }
+  const cards=[]; items.forEach(it=>{ cards.push(mk(it,'pic')); cards.push(mk(it,'snd')); });
+  shuffle(cards).forEach(c=>grid.appendChild(c));
+}
+
+/* 5 · BETUL ATAU SALAH */
+function runBetulSalah(){
+  const cfg=LV().cfg, pool=LV().pool;
+  const base=sample(pool,cfg.tf);
+  const flags=shuffle(base.map((_,i)=>i<Math.ceil(base.length/2)));
+  const qs=base.map((it,i)=>{
+    let show=it;
+    if(!flags[i]) show=pick(pool.filter(p=>p.id!==it.id));
+    return {snd:it, show, truth:flags[i]};
+  });
+  let idx=0, score=0, lock=false, autoT=0;
+  const A=actShell('Dengar bunyi, kemudian tekan <b>BETUL</b> jika ayat itu betul atau <b>SALAH</b> jika ia salah.');
+  const stage=soundStage('Dengar'); A.appendChild(stage);
+  const btn=stage.querySelector('.btn-sound'), eq=stage.querySelector('.eq');
+  const card=el(`<div class="tf-card"><div class="tf-pic"></div><p class="tf-sent">Bunyi ini ialah <b class="tf-name">—</b>.</p></div>`);
+  A.appendChild(card);
+  const acts=el(`<div class="tf-actions">
+    <button class="tf-btn yes">${ICONS.check}<span>BETUL</span></button>
+    <button class="tf-btn no">${ICONS.cross}<span>SALAH</span></button></div>`);
+  A.appendChild(acts);
+  btn.onclick=()=>playItem(qs[idx].snd,btn,eq);
+  function render(){
+    setProgress(idx,qs.length,state.act.color);
+    const q=qs[idx]; clearTimeout(autoT);
+    card.querySelector('.tf-pic').innerHTML=svgOf(q.show);
+    card.querySelector('.tf-name').textContent=q.show.name.toUpperCase();
+    card.classList.remove('good','bad');
+    autoT=setTimeout(()=>playItem(q.snd,btn,eq),650);
+  }
+  function ans(saidYes){
+    if(lock) return; lock=true;
+    const q=qs[idx];
+    const ok=(saidYes===q.truth);
+    if(ok){ score++; sfx.correct(); bigMark(true); card.classList.add('good'); }
+    else{ sfx.wrong(); bigMark(false); card.classList.add('bad'); toast(`Bunyi itu sebenarnya ialah ${q.snd.name}.`); }
+    setTimeout(()=>{ idx++; lock=false; idx>=qs.length ? finishActivity(score,qs.length,'jawapan tepat') : render(); },1900);
+  }
+  acts.querySelector('.yes').onclick=()=>ans(true);
+  acts.querySelector('.no').onclick=()=>ans(false);
+  render();
+}
+
+/* 6 · MENYUSUN URUTAN */
+function runUrutan(){
+  const cfg=LV().cfg, pool=LV().pool;
+  const seq=sample(pool,cfg.seq);
+  let filled=0, attempts=0, playing=false;
+  const A=actShell('Dengar <b>urutan bunyi</b> dengan teliti, kemudian susun gambar mengikut urutan yang sama. Tekan gambar dalam kotak untuk mengeluarkannya semula.');
+  const stage=soundStage('Main Urutan'); A.appendChild(stage);
+  const btn=stage.querySelector('.btn-sound'), eq=stage.querySelector('.eq');
+  const live=el(`<div class="seq-live"><b>—</b><span>Bunyi</span></div>`); A.appendChild(live);
+  const slots=el(`<div class="seq-slots" style="--k:${cfg.seq}"></div>`); A.appendChild(slots);
+  const poolEl=el('<div class="seq-pool"></div>'); A.appendChild(poolEl);
+  const btnCheck=el(`<button class="btn btn-primary btn-check" disabled>Semak Jawapan</button>`); A.appendChild(btnCheck);
+  setProgress(0,cfg.seq,state.act.color);
+  const fills=[];
+  for(let i=0;i<cfg.seq;i++){
+    const s=el(`<button class="seq-slot" data-noblip><span class="slot-no">${i+1}</span><span class="slot-fill"></span></button>`);
+    s.onclick=()=>{
+      const f=s.querySelector('.slot-fill');
+      if(f.dataset.id){
+        const tile=poolEl.querySelector(`.seq-tile[data-id="${f.dataset.id}"]`);
+        if(tile) tile.classList.remove('used');
+        f.innerHTML=''; delete f.dataset.id; filled--;
+        btnCheck.disabled=true; setProgress(filled,cfg.seq,state.act.color);
+      }
+    };
+    slots.appendChild(s); fills.push(s);
+  }
+  shuffle(seq.slice()).forEach(it=>{
+    const t=el(`<button class="seq-tile" data-id="${it.id}" data-noblip>${svgOf(it)}${cfg.showName?`<span class="tile-name">${it.name}</span>`:''}</button>`);
+    t.onclick=()=>{
+      if(t.classList.contains('used')) return;
+      const s=fills.find(x=>!x.querySelector('.slot-fill').dataset.id);
+      if(!s) return;
+      t.classList.add('used'); sfx.pop();
+      const f=s.querySelector('.slot-fill'); f.dataset.id=it.id;
+      f.innerHTML=`<span class="slot-pop">${svgOf(it)}</span>`;
+      filled++; setProgress(filled,cfg.seq,state.act.color);
+      btnCheck.disabled = filled<cfg.seq;
+    };
+    poolEl.appendChild(t);
+  });
+  btn.onclick=()=>{
+    if(playing) return; playing=true;
+    let t=400;
+    seq.forEach((it,i)=>{
+      setTimeout(()=>{
+        live.querySelector('b').textContent=i+1;
+        live.classList.remove('pop'); void live.offsetWidth; live.classList.add('pop');
+        ac(); it.sound();
+      },t);
+      t+=(it.dur+.65)*1000;
+    });
+    setTimeout(()=>{ playing=false; }, t+200);
+  };
+  setTimeout(()=>btn.onclick(),800); /* main sekali secara automatik */
+  btnCheck.onclick=()=>{
+    if(playing) return;
+    const ok=fills.every((s,i)=>s.querySelector('.slot-fill').dataset.id===seq[i].id);
+    attempts++;
+    if(ok){
+      playing=true; sfx.correct();
+      fills.forEach((s,i)=>setTimeout(()=>{
+        s.classList.add('good');
+        const p=s.querySelector('.slot-pop'); if(p) p.classList.add('jump');
+        ac(); seq[i].sound();
+      }, i*700));
+      setTimeout(()=>finishActivity(Math.max(1,cfg.seq-(attempts-1)),cfg.seq,'markah'), cfg.seq*700+1200);
+    }else{
+      sfx.wrong();
+      slots.classList.remove('shake-x'); void slots.offsetWidth; slots.classList.add('shake-x');
+      toast('Urutan belum betul. Dengar semula dan cuba lagi!');
+    }
+  };
+}
+
+/* 7 · PUZZLE 4 KEPING */
+function runPuzzle(){
+  const cfg=LV().cfg, pool=LV().pool;
+  const puzzles=sample(pool,cfg.puzzle);
+  let pIdx=0, swaps=0, peeks=0;
+  const A=actShell('Tekan <b>dua keping</b> untuk menukar tempatnya. Susun semua keping sehingga menjadi satu gambar yang lengkap!');
+  const head=el(`<div class="pz-head"><span class="pz-count">Puzzle 1 / ${cfg.puzzle}</span><button class="btn btn-ghost btn-peek" data-noblip>Pandang Gambar</button></div>`);
+  A.appendChild(head);
+  const board=el('<div class="pz-board"></div>'); A.appendChild(board);
+  const countEl=head.querySelector('.pz-count'), peekBtn=head.querySelector('.btn-peek');
+  let slotOf=[], pieces=[], sel=null, done=false;
+  setProgress(0,cfg.puzzle,state.act.color);
+  peekBtn.onclick=()=>{
+    if(done) return; peeks++;
+    const it=puzzles[pIdx];
+    const peek=el(`<div class="pz-peek">${svgOf(it)}<b>${it.name}</b></div>`);
+    board.appendChild(peek);
+    setTimeout(()=>peek.remove(),2400);
+  };
+  function setPos(pc){ const s=slotOf[+pc.dataset.p]; pc.style.setProperty('--x', s%2); pc.style.setProperty('--y', Math.floor(s/2)); }
+  function setup(){
+    done=false; countEl.textContent=`Puzzle ${pIdx+1} / ${cfg.puzzle}`;
+    board.classList.remove('done'); board.innerHTML='';
+    setProgress(pIdx,cfg.puzzle,state.act.color);
+    let ord; do{ ord=shuffle([0,1,2,3]); }while(ord.every((v,i)=>v===i));
+    slotOf=ord.slice(); pieces=[]; sel=null;
+    if(cfg.puzzleNum){
+      for(let i=0;i<4;i++){
+        board.appendChild(el(`<span class="pz-hintno" style="--x:${i%2};--y:${Math.floor(i/2)}">${i+1}</span>`));
+      }
+    }
+    for(let p=0;p<4;p++){
+      const x0=(p%2)*60, y0=Math.floor(p/2)*60;
+      const piece=el(`<button class="pz-piece" data-noblip data-p="${p}" style="--x:${slotOf[p]%2};--y:${Math.floor(slotOf[p]/2)}">
+        ${svgOf(puzzles[pIdx],`${x0} ${y0} 60 60`)}
+        ${cfg.puzzleNum?`<span class="pz-num">${p+1}</span>`:''}</button>`);
+      piece.onclick=()=>{
+        if(done) return;
+        if(sel===null){ sel=piece; piece.classList.add('lift'); sfx.blip(); }
+        else if(sel===piece){ piece.classList.remove('lift'); sel=null; }
+        else{
+          const a=sel, b=piece; sel=null; a.classList.remove('lift');
+          const sa=slotOf[+a.dataset.p], sb=slotOf[+b.dataset.p];
+          slotOf[+a.dataset.p]=sb; slotOf[+b.dataset.p]=sa;
+          setPos(a); setPos(b); swaps++; sfx.snap();
+          setTimeout(check,420);
+        }
+      };
+      board.appendChild(piece); pieces.push(piece);
+    }
+  }
+  function check(){
+    if(!pieces.every(pc=>slotOf[+pc.dataset.p]===+pc.dataset.p)) return;
+    done=true;
+    board.classList.add('done');
+    pieces.forEach(p=>p.classList.add('done'));
+    const it=puzzles[pIdx];
+    setTimeout(()=>{
+      sfx.win(); confetti(50); ac(); it.sound();
+      board.appendChild(el(`<div class="pz-complete"><b>${it.name}</b><span>Tahniah! Dengar bunyinya!</span></div>`));
+    },600);
+    setTimeout(()=>{
+      pIdx++;
+      if(pIdx>=puzzles.length){
+        const per=swaps/puzzles.length;
+        const st=(peeks===0&&per<=3.2)?3:(peeks<=2&&per<=5.5)?2:1;
+        finishActivity(st,3,'bintang');
+      } else setup();
+    },2600);
+  }
+  setup();
+}
+
+const RUN = { mengecam:runMengecam, padanan:runPadanan, dragdrop:runDragdrop,
+              memori:runMemori, betulsalah:runBetulSalah, urutan:runUrutan, puzzle:runPuzzle };
+
+/* ---------- 9. TAMAT AKTIVITI, MODAL & SIJIL ---------- */
+function showModal(node){
+  const box=document.getElementById('modalBox');
+  box.innerHTML=''; box.appendChild(node);
+  document.getElementById('overlay').classList.add('show');
+}
+function hideModal(){ document.getElementById('overlay').classList.remove('show'); }
+
+function finishActivity(correct,total,label){
+  const pct=total>0?correct/total:1;
+  const st=pct>=.9?3:pct>=.55?2:1;
+  const lv=prog[state.level]||(prog[state.level]={});
+  const old=lv[state.act.key];
+  if(!old||old.stars<st) lv[state.act.key]={stars:st,best:Math.round(pct*100)};
+  saveProg();
+  sfx.win(); confetti(50+st*25);
+  const msgs={3:['Cemerlang!','Hebat sekali!','Terbaik!'],2:['Bagus!','Hampir sempurna!','Teruskan usaha!'],1:['Cuba lagi, anda pasti boleh!','Jangan berputus asa!','Latihan menjadikan hebat!']};
+  const next=ACTS[state.actIndex+1];
+  const allDone=ACTS.every(a=>prog[state.level][a.key]);
+  const m=el(`<div>
+    <div class="m-stars">${[1,2,3].map(i=>`<span class="mstar" style="--i:${i}">${starSVG(i<=st)}</span>`).join('')}</div>
+    <h3 class="m-title">${pick(msgs[st])}</h3>
+    <p class="m-score">${correct} / ${total} <span>${label}</span></p>
+    ${allDone?`<p class="m-alldone">${ICONS.trophy} Semua 7 aktiviti aras ini telah selesai!</p>`:''}
+    <div class="m-btns">
+      <button class="btn" data-m="again">Main Lagi</button>
+      ${next?`<button class="btn btn-primary" data-m="next">Aktiviti Seterusnya</button>`:''}
+      ${allDone?`<button class="btn btn-primary" data-m="cert">Lihat Sijil</button>`:''}
+      <button class="btn" data-m="menu">Menu Aktiviti</button>
+    </div></div>`);
+  m.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.m; hideModal();
+    if(k==='again') RUN[state.act.key]();
+    else if(k==='next') openActivity(next.key);
+    else if(k==='cert') showCert();
+    else{ renderMenu(); go('screen-menu'); }
+  });
+  setTimeout(()=>showModal(m),350);
+}
+
+function showCert(){
+  const lv=LEVELS[state.level];
+  const got=ACTS.reduce((s,a)=>s+((prog[state.level][a.key]||{}).stars||0),0);
+  const c=el(`<div class="cert">
+    <div class="cert-frame">
+      <span class="badge">Sijil Pencapaian</span>
+      <div class="cert-trophy">${ICONS.trophy}</div>
+      <h2>Tahniah!</h2>
+      <p>Anda telah melengkapkan kesemua <b>7 aktiviti</b><br>pada aras <b>${lv.nama}</b>.</p>
+      <div class="cert-stars">${got} <small>/ 21 bintang</small></div>
+      <div class="cert-note">Dunia Bunyi · Standard Kandungan 3.1.2<br>Mengecam Bunyi yang Didengar</div>
+    </div>
+    <div class="m-btns">
+      <button class="btn btn-primary" data-c="level">Pilih Aras Lain</button>
+      <button class="btn" data-c="menu">Menu Aktiviti</button>
+    </div></div>`);
+  c.querySelectorAll('[data-c]').forEach(b=>b.onclick=()=>{
+    hideModal();
+    if(b.dataset.c==='level'){ renderLevels(); go('screen-level'); }
+    else{ renderMenu(); go('screen-menu'); }
+  });
+  sfx.win(); confetti(120);
+  showModal(c);
+}
+
+/* ---------- 10. DEKORASI & INIT ---------- */
+function decorSVG(t,c){
+  if(t==='note') return `<svg viewBox="0 0 24 24"><g fill="${c}" stroke="#3A2E39" stroke-width="1.4"><ellipse cx="7" cy="18" rx="4.6" ry="3.5" transform="rotate(-18 7 18)"/><rect x="10.4" y="3.5" width="2.6" height="14.5" rx="1.3"/><path d="M13 4.5q5.5 1 6.5 6" fill="none" stroke-width="1.8"/></g></svg>`;
+  if(t==='note2') return `<svg viewBox="0 0 24 24"><g fill="${c}" stroke="#3A2E39" stroke-width="1.4"><ellipse cx="5.5" cy="19" rx="4" ry="3" transform="rotate(-18 5.5 19)"/><ellipse cx="16.5" cy="18" rx="4" ry="3" transform="rotate(-18 16.5 18)"/><rect x="8.6" y="4" width="2.4" height="15" rx="1.2"/><rect x="18.2" y="3" width="2.4" height="15" rx="1.2"/><path d="M8.6 4.4l12-1.6v3.2l-12 1.6z"/></g></svg>`;
+  return `<svg viewBox="0 0 24 24"><path d="M2.5 12q3-6.5 6 0t6 0 6 0" fill="none" stroke="${c}" stroke-width="2.8" stroke-linecap="round"/></svg>`;
+}
+function buildDecor(){
+  const wrap=document.getElementById('floatDecor');
+  [
+    {x:3,y:18,t:'note',c:'#FF9642',s:38,r:-10,d:7},{x:88,y:10,t:'wave',c:'#2EC4B6',s:44,r:6,d:8},
+    {x:6,y:62,t:'wave',c:'#E86A92',s:34,r:-6,d:6.5},{x:92,y:55,t:'note2',c:'#4CB963',s:40,r:8,d:7.5},
+    {x:45,y:6,t:'note',c:'#4A90D9',s:26,r:12,d:6},{x:80,y:84,t:'wave',c:'#FFC94D',s:30,r:-8,d:9},
+    {x:12,y:88,t:'note2',c:'#FF5D5D',s:30,r:6,d:8.5},{x:55,y:90,t:'note',c:'#2EC4B6',s:24,r:-12,d:7}
+  ].forEach((f,i)=>{
+    const d=el(`<span class="fl" style="left:${f.x}%;top:${f.y}%;--r:${f.r}deg;--d:${f.d}s;--dl:${-i*.9}s">${decorSVG(f.t,f.c)}</span>`);
+    d.style.width=f.s+'px';
+    wrap.appendChild(d);
+  });
+}
+
+function init(){
+  buildDecor();
+  renderLevels();
+  document.getElementById('btnStart').onclick=()=>{ sfx.pop(); go('screen-level'); };
+  document.getElementById('btnBackLevel').onclick=()=>{ renderLevels(); go('screen-level'); };
+  document.getElementById('btnActBack').onclick=()=>{ renderMenu(); go('screen-menu'); };
+  document.getElementById('btnReset').onclick=()=>{
+    if(state.level){ delete prog[state.level]; saveProg(); renderMenu(); toast('Skor aras ini telah dikosongkan.'); sfx.pop(); }
+  };
+  /* Pemain Bunyi Misteri pada skrin pertama */
+  const btnM=document.getElementById('btnMystery'), eqM=document.getElementById('mysteryEq'), rev=document.getElementById('mysteryReveal');
+  let lastM=-1;
+  btnM.onclick=()=>{
+    let i; do{ i=Math.floor(Math.random()*ITEMS.length); }while(i===lastM&&ITEMS.length>1);
+    lastM=i; const it=ITEMS[i];
+    rev.innerHTML='<span class="reveal-q">?</span>';
+    playItem(it,btnM,eqM);
+    setTimeout(()=>{ rev.innerHTML=`<span class="reveal-card">${svgOf(it)}<b>${it.name}</b></span>`; },600);
+  };
+  /* Buka kunci audio pada sentuhan pertama */
+  document.addEventListener('pointerdown',()=>ac(),{passive:true});
+  /* Bunyi klik lembut untuk semua butang (maklum balas auditori) */
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('button');
+    if(b && !b.dataset.noblip) sfx.blip();
+  });
+}
+init();
