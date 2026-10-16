@@ -1,86 +1,1617 @@
 <!DOCTYPE html>
 <html lang="ms">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dunia Bunyi Interaktif - Pendidikan Khas Muzik Tahun 1</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <!-- Font Family Inter & Fredoka for playful typography -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Fredoka', 'Inter', sans-serif;
+      background: linear-gradient(135deg, #e0f2fe 0%, #fef3c7 50%, #fce7f3 100%);
+      min-height: 100vh;
+      user-select: none;
+    }
+    
+    .bounce-subtle {
+      animation: bounceSubtle 2s infinite ease-in-out;
+    }
+    
+    @keyframes bounceSubtle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
 
-<title>Kenali Bunyi Di Sekeliling Saya</title>
+    .pulse-glow {
+      animation: pulseGlow 1.8s infinite;
+    }
 
-<link rel="stylesheet" href="styles.css">
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); transform: scale(1); }
+      50% { box-shadow: 0 0 25px rgba(236, 72, 153, 0.8); transform: scale(1.03); }
+    }
+
+    .card-hover {
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    
+    .card-hover:hover {
+      transform: translateY(-6px) scale(1.02);
+    }
+
+    .card-hover:active {
+      transform: translateY(2px) scale(0.97);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #3b82f6;
+      border-radius: 10px;
+    }
+
+    /* Flip Card Animation */
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.5s;
+    }
+    .flipped {
+      transform: rotateY(180deg);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+  </style>
 </head>
-<body>
+<body class="p-2 sm:p-4 text-slate-800 flex flex-col justify-between min-h-screen">
 
-<div class="header">
-<h1>🎵 Kenali Bunyi Di Sekeliling Saya 🎵</h1>
+  <!-- TOP HEADER / NAV BAR -->
+  <header class="max-w-6xl mx-auto w-full bg-white/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 shadow-lg border-4 border-amber-300 flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="goHome()">
+      <div class="w-12 h-12 bg-amber-400 rounded-full flex items-center justify-center text-2xl shadow-inner bounce-subtle">
+        🎵
+      </div>
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold text-amber-700 tracking-wide">Dunia Bunyi Interaktif</h1>
+        <p class="text-xs sm:text-sm font-semibold text-slate-500">Pendidikan Seni Kreatif (Muzik Tahun 1)</p>
+      </div>
+    </div>
 
-<div class="info-box">
-<h2>Maklumat Pembelajaran</h2>
+    <!-- DSKP Modal Trigger Button & Controls -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <button onclick="toggleDskpModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-3 sm:px-4 rounded-xl shadow-md flex items-center gap-1 text-xs sm:text-sm transition-all hover:scale-105">
+        📘 Info DSKP
+      </button>
+      <button id="btn-back-level" onclick="showLevelSelect()" class="hidden bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-3 sm:px-4 rounded-xl shadow-md flex items-center gap-1 text-xs sm:text-sm transition-all hover:scale-105">
+        🏠 Tukar Aras
+      </button>
+      <button id="btn-sound-toggle" onclick="toggleAudioMute()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold p-2 sm:px-3 rounded-xl shadow-md text-xs sm:text-sm">
+        🔊 Audio: ON
+      </button>
+    </div>
+  </header>
 
-<p><strong>Tajuk:</strong> Kenali Bunyi Di Sekeliling Saya</p>
+  <!-- MAIN CONTENT CONTAINER -->
+  <main class="max-w-6xl mx-auto w-full flex-grow flex flex-col justify-center">
 
-<p><strong>Standard Kandungan:</strong>
-3.1 Meneroka bunyi dari pelbagai sumber melalui pengamatan dan pendengaran
-</p>
+    <!-- LEVEL SELECTION SCREEN (MAIN MENU) -->
+    <section id="screen-level-select" class="block space-y-6 text-center py-4">
+      <div class="bg-white/80 rounded-3xl p-6 shadow-xl border-4 border-amber-200 max-w-3xl mx-auto">
+        <span class="inline-block px-4 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-bold mb-2">Langkah 1</span>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-800 mb-2">Sila Pilih Aras Kesukaran</h2>
+        <p class="text-slate-600 text-sm sm:text-base">Pilih level yang sesuai untuk memulakan aktiviti penerokaan bunyi!</p>
 
-<p><strong>Standard Pembelajaran:</strong>
-3.1.2 Mengecam bunyi yang didengar:
-Haiwan, Manusia dan Kenderaan
-</p>
+        <!-- 3 Level Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <!-- Level 1 -->
+          <div onclick="selectLevel(1)" class="card-hover bg-gradient-to-b from-emerald-100 to-teal-200 border-4 border-emerald-400 rounded-2xl p-5 cursor-pointer shadow-lg flex flex-col items-center justify-between">
+            <div class="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-md mb-3">
+              1
+            </div>
+            <h3 class="text-xl font-bold text-emerald-900 mb-1">Aras 1: Mudah</h3>
+            <p class="text-xs text-emerald-800 mb-4 font-medium">2 pilihan jawapan, petunjuk visual nyata & bimbingan mesra.</p>
+            <span class="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-emerald-700 w-full">Pilih Level 1</span>
+          </div>
 
-<p><strong>Hasil Pembelajaran:</strong>
-Murid dapat mengenal pasti dan membezakan bunyi haiwan,
-manusia serta kenderaan.
-</p>
-</div>
-</div>
+          <!-- Level 2 -->
+          <div onclick="selectLevel(2)" class="card-hover bg-gradient-to-b from-amber-100 to-yellow-200 border-4 border-amber-400 rounded-2xl p-5 cursor-pointer shadow-lg flex flex-col items-center justify-between">
+            <div class="w-16 h-16 bg-amber-500 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-md mb-3">
+              2
+            </div>
+            <h3 class="text-xl font-bold text-amber-900 mb-1">Aras 2: Sederhana</h3>
+            <p class="text-xs text-amber-800 mb-4 font-medium">3 pilihan jawapan, cabaran gabungan pelbagai bunyi.</p>
+            <span class="bg-amber-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-amber-700 w-full">Pilih Level 2</span>
+          </div>
 
-<div id="levelPage">
+          <!-- Level 3 -->
+          <div onclick="selectLevel(3)" class="card-hover bg-gradient-to-b from-rose-100 to-pink-200 border-4 border-rose-400 rounded-2xl p-5 cursor-pointer shadow-lg flex flex-col items-center justify-between">
+            <div class="w-16 h-16 bg-rose-500 text-white rounded-full flex items-center justify-center text-3xl font-bold shadow-md mb-3">
+              3
+            </div>
+            <h3 class="text-xl font-bold text-rose-900 mb-1">Aras 3: Mencabar</h3>
+            <p class="text-xs text-rose-800 mb-4 font-medium">4 pilihan jawapan, urutan bunyi lebih kompleks & puzzle.</p>
+            <span class="bg-rose-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow hover:bg-rose-700 w-full">Pilih Level 3</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-<h2>Pilih Tahap Permainan</h2>
+    <!-- ACTIVITIES MENU DASHBOARD -->
+    <section id="screen-activity-menu" class="hidden space-y-6 text-center py-2">
+      <div class="bg-white/80 rounded-2xl p-4 shadow-md border-2 border-indigo-200 max-w-4xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <span id="badge-level-display" class="px-3 py-1 bg-indigo-600 text-white rounded-lg text-sm font-bold">
+            Aras: Mudah
+          </span>
+          <span class="text-slate-600 text-sm font-semibold">Pilih 1 daripada 7 Aktiviti Interaktif di bawah:</span>
+        </div>
+        <button onclick="showLevelSelect()" class="text-xs bg-slate-200 hover:bg-slate-300 font-bold py-1 px-3 rounded-lg text-slate-700">
+          ⚙️ Tukar Level
+        </button>
+      </div>
 
-<div class="level-container">
+      <!-- 7 Activities Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-5xl mx-auto">
+        <!-- Act 1 -->
+        <div onclick="startActivity(1)" class="card-hover bg-gradient-to-br from-blue-400 to-indigo-500 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-blue-300 flex flex-col items-center">
+          <div class="text-4xl mb-2">👂</div>
+          <h3 class="font-bold text-lg">1. Mengecam</h3>
+          <p class="text-xs opacity-90 mt-1">Dengar bunyi & pilih gambar yang betul</p>
+        </div>
 
-<button class="level-btn easy" onclick="selectLevel('Mudah')">
-🌟 MUDAH
-</button>
+        <!-- Act 2 -->
+        <div onclick="startActivity(2)" class="card-hover bg-gradient-to-br from-emerald-400 to-teal-600 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-emerald-300 flex flex-col items-center">
+          <div class="text-4xl mb-2">🔗</div>
+          <h3 class="font-bold text-lg">2. Padanan</h3>
+          <p class="text-xs opacity-90 mt-1">Padankan ikon bunyi dengan gambar</p>
+        </div>
 
-<button class="level-btn medium" onclick="selectLevel('Sederhana')">
-🚀 SEDERHANA
-</button>
+        <!-- Act 3 -->
+        <div onclick="startActivity(3)" class="card-hover bg-gradient-to-br from-amber-400 to-orange-500 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-amber-300 flex flex-col items-center">
+          <div class="text-4xl mb-2">📦</div>
+          <h3 class="font-bold text-lg">3. Drag & Drop</h3>
+          <p class="text-xs opacity-90 mt-1">Kelaskan ke kotak Haiwan, Manusia, Kenderaan</p>
+        </div>
 
-<button class="level-btn hard" onclick="selectLevel('Mencabar')">
-🏆 MENCABAR
-</button>
+        <!-- Act 4 -->
+        <div onclick="startActivity(4)" class="card-hover bg-gradient-to-br from-purple-400 to-pink-500 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-purple-300 flex flex-col items-center">
+          <div class="text-4xl mb-2">🃏</div>
+          <h3 class="font-bold text-lg">4. Permainan Memori</h3>
+          <p class="text-xs opacity-90 mt-1">Buka kad & cari pasangan bunyi-gambar</p>
+        </div>
 
-</div>
+        <!-- Act 5 -->
+        <div onclick="startActivity(5)" class="card-hover bg-gradient-to-br from-rose-400 to-red-500 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-rose-300 flex flex-col items-center">
+          <div class="text-4xl mb-2">✔️</div>
+          <h3 class="font-bold text-lg">5. Betul / Salah</h3>
+          <p class="text-xs opacity-90 mt-1">Dengar soalan & tekan Betul atau Salah</p>
+        </div>
 
-</div>
+        <!-- Act 6 -->
+        <div onclick="startActivity(6)" class="card-hover bg-gradient-to-br from-cyan-400 to-blue-600 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-cyan-300 flex flex-col items-center">
+          <div class="text-4xl mb-2">🔢</div>
+          <h3 class="font-bold text-lg">6. Menyusun Urutan</h3>
+          <p class="text-xs opacity-90 mt-1">Dengar siri bunyi & susun mengikut urutan</p>
+        </div>
 
-<div id="gamePage" class="hidden">
+        <!-- Act 7 -->
+        <div onclick="startActivity(7)" class="card-hover bg-gradient-to-br from-fuchsia-500 to-purple-700 text-white rounded-2xl p-4 cursor-pointer shadow-lg border-2 border-fuchsia-300 flex flex-col items-center sm:col-span-2 lg:col-span-2">
+          <div class="text-4xl mb-2">🧩</div>
+          <h3 class="font-bold text-lg">7. Puzzle 4 Gambar</h3>
+          <p class="text-xs opacity-90 mt-1">Cantumkan 4 kepingan puzzle untuk melengkapkan gambar</p>
+        </div>
+      </div>
+    </section>
 
-<h2 id="levelTitle"></h2>
+    <!-- WORKSPACE AREA FOR THE ACTIVE ACTIVITY -->
+    <section id="screen-activity-workspace" class="hidden my-2">
+      <div class="bg-white/90 backdrop-blur-md rounded-3xl p-4 sm:p-6 shadow-2xl border-4 border-indigo-200 relative min-h-[480px] flex flex-col justify-between">
+        
+        <!-- Activity Top Navigation Bar -->
+        <div class="flex items-center justify-between pb-3 border-b-2 border-slate-100 mb-4 flex-wrap gap-2">
+          <button onclick="backToActivityMenu()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-1.5 px-3 rounded-xl text-xs sm:text-sm flex items-center gap-1">
+            ⬅️ Kembali ke Menu Aktiviti
+          </button>
 
-<div class="activity-menu">
+          <div class="text-center">
+            <h2 id="act-title" class="text-xl sm:text-2xl font-extrabold text-indigo-800">Aktiviti 1: Mengecam Bunyi</h2>
+            <p id="act-subtitle" class="text-xs text-slate-500 font-semibold">Pilih gambar yang sepadan dengan bunyi</p>
+          </div>
 
-<button onclick="loadActivity(1)">1. Mengecam</button>
-<button onclick="loadActivity(2)">2. Padanan</button>
-<button onclick="loadActivity(3)">3. Drag & Drop</button>
-<button onclick="loadActivity(4)">4. Memori</button>
-<button onclick="loadActivity(5)">5. Betul / Salah</button>
-<button onclick="loadActivity(6)">6. Urutan</button>
-<button onclick="loadActivity(7)">7. Puzzle</button>
+          <div class="flex items-center gap-2">
+            <span id="act-score-badge" class="bg-amber-100 text-amber-800 font-bold text-xs sm:text-sm px-3 py-1 rounded-full border border-amber-300">
+              ⭐ Skor: 0
+            </span>
+          </div>
+        </div>
 
-</div>
+        <!-- CONTAINER WHERE DYNAMIC ACTIVITY UI RENDERS -->
+        <div id="activity-container" class="flex-grow flex flex-col items-center justify-center my-2">
+          <!-- Dynamic Content Rendered Here -->
+        </div>
 
-<div id="activityArea">
+        <!-- Activity Bottom Feedback / Status Message -->
+        <div id="activity-feedback" class="mt-4 p-3 rounded-2xl text-center font-bold text-sm hidden">
+          <!-- Dynamic Feedback Message -->
+        </div>
 
-<h2>Sila pilih aktiviti</h2>
+      </div>
+    </section>
 
-</div>
+  </main>
 
-</div>
+  <!-- FOOTER -->
+  <footer class="mt-6 text-center text-xs text-slate-600 font-medium py-2">
+    <p>Program Pendidikan Khas Integrasi (KSSRPK Semakan) • Pendidikan Seni Kreatif (Komponen Muzik Tahun 1)</p>
+  </footer>
 
-script.jsscript>
+  <!-- DSKP INFORMATION MODAL -->
+  <div id="modal-dskp" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border-4 border-indigo-400 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="toggleDskpModal()" class="absolute top-4 right-4 bg-rose-500 text-white rounded-full w-8 h-8 font-bold flex items-center justify-center hover:bg-rose-600">
+        ✕
+      </button>
 
+      <div class="flex items-center gap-3 mb-4">
+        <div class="text-4xl">📘</div>
+        <div>
+          <h2 class="text-xl font-bold text-indigo-900">Maklumat Kurikulum DSKP</h2>
+          <p class="text-xs text-slate-500">KSSRPK Semakan - Pendidikan Seni Kreatif (Muzik)</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 text-sm text-slate-700">
+        <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-200">
+          <h3 class="font-bold text-indigo-900 mb-1">1. Maklumat Umum Hasil Pembelajaran</h3>
+          <p class="text-xs leading-relaxed">
+            Aplikasi ini direka untuk membantu murid Pendidikan Khas Pembelajaran meneroka dan mengecam pelbagai bunyi dari persekitaran. Murid dapat membina daya pengamatan pendengaran, meningkatkan koordinasi sensori-motor, dan membina daya ingatan audio-visual menerusi 3 level kesukaran terbeza.
+          </p>
+        </div>
+
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200">
+          <h3 class="font-bold text-amber-900 mb-1">2. Tajuk</h3>
+          <p class="text-xs font-semibold text-amber-800">3.0 PENGALAMAN MUZIKAL</p>
+        </div>
+
+        <div class="bg-emerald-50 p-3 rounded-xl border border-emerald-200">
+          <h3 class="font-bold text-emerald-900 mb-1">3. Standard Kandungan & Standard Pembelajaran</h3>
+          <ul class="text-xs space-y-1 list-disc list-inside font-medium text-emerald-800">
+            <li><strong>Standard Kandungan 3.1:</strong> Meneroka bunyi dari pelbagai sumber melalui pengamatan dan pendengaran.</li>
+            <li><strong>Standard Pembelajaran 3.1.2:</strong> Mengecam bunyi yang didengar:
+              <ul class="pl-5 list-circle">
+                <li>i. Haiwan</li>
+                <li>ii. Manusia</li>
+                <li>iii. Kenderaan</li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-6 text-center">
+        <button onclick="toggleDskpModal()" class="bg-indigo-600 text-white font-bold px-6 py-2 rounded-xl text-sm hover:bg-indigo-700">
+          Faham & Tutup
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- JAVASCRIPT LOGIC & AUDIO SYNTHESIS -->
+  <script>
+    /* ==========================================================================
+       GLOBAL STATE & SOUND DATABASE
+       ========================================================================== */
+    let currentLevel = 1; // 1: Mudah, 2: Sederhana, 3: Mencabar
+    let currentActivity = 1;
+    let isMuted = false;
+    let totalScore = 0;
+
+    // Web Audio API Context
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Voice Synthesis Helper (SpeechSynthesis)
+    function speakText(text, pitch = 1.1, rate = 1.0) {
+      if (isMuted) return;
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'ms-MY';
+        utterance.pitch = pitch;
+        utterance.rate = rate;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    /* --------------------------------------------------------------------------
+       PROCEDURAL AUDIO SYNTHESIZERS FOR 12 SOUND ITEMS
+       -------------------------------------------------------------------------- */
+    const SOUND_LIBRARY = {
+      // HAIWAN
+      kucing: {
+        id: 'kucing',
+        name: 'Kucing',
+        category: 'haiwan',
+        categoryLabel: 'Haiwan 🐱',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M20,30 L35,10 L45,35 Z" fill="#f97316"/><path d="M80,30 L65,10 L55,35 Z" fill="#f97316"/><circle cx="50" cy="55" r="35" fill="#fb923c"/><circle cx="38" cy="48" r="6" fill="#ffffff"/><circle cx="38" cy="48" r="3" fill="#000000"/><circle cx="62" cy="48" r="6" fill="#ffffff"/><circle cx="62" cy="48" r="3" fill="#000000"/><polygon points="50,58 45,63 55,63" fill="#f43f5e"/><path d="M30,62 Q50,75 70,62" fill="none" stroke="#7c2d12" stroke-width="3" stroke-linecap="round"/><line x1="15" y1="52" x2="32" y2="55" stroke="#7c2d12" stroke-width="2"/><line x1="12" y1="62" x2="30" y2="60" stroke="#7c2d12" stroke-width="2"/><line x1="85" y1="52" x2="68" y2="55" stroke="#7c2d12" stroke-width="2"/><line x1="88" y1="62" x2="70" y2="60" stroke="#7c2d12" stroke-width="2"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          const now = ctx.currentTime;
+          osc.frequency.setValueAtTime(420, now);
+          osc.frequency.exponentialRampToValueAtTime(780, now + 0.25);
+          osc.frequency.exponentialRampToValueAtTime(360, now + 0.65);
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.4, now + 0.1);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.7);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.7);
+          speakText("Meow!", 1.2, 1.2);
+        }
+      },
+      anjing: {
+        id: 'anjing',
+        name: 'Anjing',
+        category: 'haiwan',
+        categoryLabel: 'Haiwan 🐶',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M15,25 Q10,60 28,60" fill="#78350f"/><path d="M85,25 Q90,60 72,60" fill="#78350f"/><circle cx="50" cy="50" r="35" fill="#b45309"/><circle cx="38" cy="42" r="5" fill="#ffffff"/><circle cx="38" cy="42" r="2.5" fill="#000000"/><circle cx="62" cy="42" r="5" fill="#ffffff"/><circle cx="62" cy="42" r="2.5" fill="#000000"/><ellipse cx="50" cy="58" rx="10" ry="7" fill="#451a03"/><path d="M42,65 Q50,78 58,65" fill="none" stroke="#451a03" stroke-width="3" stroke-linecap="round"/><path d="M48,70 Q50,82 54,70" fill="#f43f5e"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [0, 0.22].forEach(delay => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(240, now + delay);
+            osc.frequency.exponentialRampToValueAtTime(90, now + delay + 0.15);
+            gain.gain.setValueAtTime(0.5, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.16);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.16);
+          });
+          speakText("Woof woof!", 1.0, 0.9);
+        }
+      },
+      ayam: {
+        id: 'ayam',
+        name: 'Ayam',
+        category: 'haiwan',
+        categoryLabel: 'Haiwan 🐔',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M40,15 Q50,5 60,15 Q50,22 40,15" fill="#dc2626"/><circle cx="50" cy="52" r="32" fill="#f59e0b"/><polygon points="62,50 82,55 62,62" fill="#ea580c"/><circle cx="42" cy="42" r="4" fill="#ffffff"/><circle cx="42" cy="42" r="2" fill="#000000"/><path d="M45,72 Q50,82 55,72" fill="#dc2626"/><path d="M30,80 L25,95 M35,80 L35,95 M65,80 L65,95 M70,80 L75,95" stroke="#d97706" stroke-width="4" stroke-linecap="round"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(320, now);
+          osc.frequency.linearRampToValueAtTime(650, now + 0.2);
+          osc.frequency.linearRampToValueAtTime(500, now + 0.45);
+          osc.frequency.linearRampToValueAtTime(750, now + 0.85);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.9);
+          speakText("Kukukuruyuk!", 1.1, 1.2);
+        }
+      },
+      burung: {
+        id: 'burung',
+        name: 'Burung',
+        category: 'haiwan',
+        categoryLabel: 'Haiwan 🐦',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M20,60 Q50,20 80,50 Q60,85 20,60" fill="#0284c7"/><circle cx="70" cy="40" r="18" fill="#38bdf8"/><polygon points="82,38 98,42 82,48" fill="#f59e0b"/><circle cx="72" cy="35" r="3" fill="#000000"/><path d="M30,55 Q10,40 15,25 Q35,40 30,55" fill="#0369a1"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [0, 0.14, 0.28].forEach((delay) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(1900, now + delay);
+            osc.frequency.exponentialRampToValueAtTime(2700, now + delay + 0.08);
+            gain.gain.setValueAtTime(0.3, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.09);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.09);
+          });
+          speakText("Cip cip cip!", 1.3, 1.4);
+        }
+      },
+
+      // MANUSIA
+      ketawa: {
+        id: 'ketawa',
+        name: 'Ketawa',
+        category: 'manusia',
+        categoryLabel: 'Manusia 😃',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="50" r="40" fill="#fde047" stroke="#eab308" stroke-width="4"/><path d="M28,38 Q38,28 48,38" fill="none" stroke="#854d0e" stroke-width="4" stroke-linecap="round"/><path d="M52,38 Q62,28 72,38" fill="none" stroke="#854d0e" stroke-width="4" stroke-linecap="round"/><path d="M28,55 Q50,85 72,55 Z" fill="#991b1b"/><path d="M35,56 Q50,65 65,56" fill="#ffffff"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [0, 0.16, 0.32, 0.48, 0.64].forEach((delay, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(460 - idx * 15, now + delay);
+            osc.frequency.exponentialRampToValueAtTime(280, now + delay + 0.11);
+            gain.gain.setValueAtTime(0.35, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.13);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.13);
+          });
+          speakText("Ha ha ha ha!", 1.2, 1.2);
+        }
+      },
+      menangis: {
+        id: 'menangis',
+        name: 'Menangis',
+        category: 'manusia',
+        categoryLabel: 'Manusia 😭',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="50" cy="50" r="40" fill="#60a5fa" stroke="#2563eb" stroke-width="4"/><circle cx="35" cy="42" r="5" fill="#1e3a8a"/><circle cx="65" cy="42" r="5" fill="#1e3a8a"/><path d="M32,68 Q50,52 68,68" fill="none" stroke="#1e3a8a" stroke-width="4" stroke-linecap="round"/><path d="M30,48 Q25,65 30,72" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/><path d="M70,48 Q75,65 70,72" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [0, 0.38, 0.76].forEach((delay) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(520, now + delay);
+            osc.frequency.linearRampToValueAtTime(340, now + delay + 0.3);
+            gain.gain.setValueAtTime(0.3, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.33);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now + delay);
+            osc.stop(now + delay + 0.33);
+          });
+          speakText("Uuu uuu uuu!", 0.8, 0.8);
+        }
+      },
+      batuk: {
+        id: 'batuk',
+        name: 'Batuk',
+        category: 'manusia',
+        categoryLabel: 'Manusia 😷',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="45" cy="50" r="35" fill="#fca5a5" stroke="#dc2626" stroke-width="3"/><rect x="25" y="48" width="40" height="22" rx="6" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/><circle cx="35" cy="38" r="4" fill="#000000"/><circle cx="55" cy="38" r="4" fill="#000000"/><path d="M72,40 Q85,30 95,40 M75,52 Q90,52 98,52 M72,64 Q85,74 95,64" fill="none" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [0, 0.2].forEach(delay => {
+            const bufferSize = ctx.sampleRate * 0.12;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 750;
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.5, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.12);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start(now + delay);
+          });
+          speakText("Uhuk uhuk!", 1.0, 0.9);
+        }
+      },
+      tepuk: {
+        id: 'tepuk',
+        name: 'Tepuk Tangan',
+        category: 'manusia',
+        categoryLabel: 'Manusia 👏',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M25,75 L38,30 Q42,20 48,32 L50,50 L58,35 Q62,25 66,35 L60,52 L68,40 Q72,30 76,40 L65,65 Q55,85 25,75 Z" fill="#fde047" stroke="#ca8a04" stroke-width="3"/><path d="M75,75 L62,30 Q58,20 52,32 L50,50 L42,35 Q38,25 34,35 L40,52 L32,40 Q28,30 24,40 L35,65 Q45,85 75,75 Z" fill="#facc15" stroke="#ca8a04" stroke-width="3"/><path d="M50,15 L50,25 M35,20 L42,27 M65,20 L58,27" stroke="#eab308" stroke-width="4" stroke-linecap="round"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          for (let i = 0; i < 6; i++) {
+            const delay = i * 0.08 + Math.random() * 0.02;
+            const bufferSize = ctx.sampleRate * 0.05;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let j = 0; j < bufferSize; j++) data[j] = Math.random() * 2 - 1;
+            const noise = ctx.createBufferSource();
+            noise.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.value = 1300 + Math.random() * 400;
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0.4, now + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + delay + 0.05);
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            noise.start(now + delay);
+          }
+          speakText("Prok prok prok!", 1.2, 1.2);
+        }
+      },
+
+      // KENDERAAN
+      kereta: {
+        id: 'kereta',
+        name: 'Kereta',
+        category: 'kenderaan',
+        categoryLabel: 'Kenderaan 🚗',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><path d="M15,55 L25,35 Q30,25 45,25 L65,25 Q75,25 82,35 L90,55 Z" fill="#ef4444"/><rect x="10" y="50" width="82" height="20" rx="6" fill="#dc2626"/><circle cx="30" cy="70" r="10" fill="#1e293b"/><circle cx="30" cy="70" r="4" fill="#94a3b8"/><circle cx="72" cy="70" r="10" fill="#1e293b"/><circle cx="72" cy="70" r="4" fill="#94a3b8"/><path d="M30,32 L46,32 L46,48 L25,48 Z" fill="#bae6fd"/><path d="M52,32 L68,32 L75,48 L52,48 Z" fill="#bae6fd"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [350, 440].forEach(freq => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.setValueAtTime(0.3, now + 0.4);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.48);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.48);
+          });
+          speakText("Pon pon!", 1.1, 1.1);
+        }
+      },
+      motosikal: {
+        id: 'motosikal',
+        name: 'Motosikal',
+        category: 'kenderaan',
+        categoryLabel: 'Kenderaan 🏍️',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><circle cx="25" cy="65" r="14" fill="#1e293b" stroke="#64748b" stroke-width="4"/><circle cx="75" cy="65" r="14" fill="#1e293b" stroke="#64748b" stroke-width="4"/><path d="M25,65 L45,45 L65,45 L75,65" fill="none" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/><rect x="40" y="38" width="20" height="10" rx="3" fill="#1d4ed8"/><path d="M60,35 L75,25" stroke="#000000" stroke-width="4" stroke-linecap="round"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(110, now);
+          osc.frequency.linearRampToValueAtTime(290, now + 0.4);
+          osc.frequency.linearRampToValueAtTime(160, now + 0.75);
+          gain.gain.setValueAtTime(0.4, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.8);
+          speakText("Vroom vroom!", 1.0, 0.9);
+        }
+      },
+      kereta_api: {
+        id: 'kereta_api',
+        name: 'Kereta Api',
+        category: 'kenderaan',
+        categoryLabel: 'Kenderaan 🚂',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="20" y="35" width="55" height="35" fill="#0284c7" rx="4"/><rect x="60" y="25" width="25" height="45" fill="#0369a1" rx="4"/><rect x="28" y="18" width="10" height="18" fill="#475569"/><circle cx="30" cy="75" r="8" fill="#0f172a"/><circle cx="50" cy="75" r="8" fill="#0f172a"/><circle cx="72" cy="75" r="8" fill="#0f172a"/><polygon points="10,70 20,50 20,70" fill="#f59e0b"/><path d="M25,12 Q20,2 10,8" fill="none" stroke="#94a3b8" stroke-width="4" stroke-linecap="round"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          [587, 740].forEach(freq => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.65);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.65);
+          });
+          speakText("Tut tut choo choo!", 1.0, 1.1);
+        }
+      },
+      ambulans: {
+        id: 'ambulans',
+        name: 'Ambulans',
+        category: 'kenderaan',
+        categoryLabel: 'Kenderaan 🚑',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full"><rect x="15" y="35" width="70" height="35" fill="#ffffff" stroke="#cbd5e1" stroke-width="3" rx="6"/><path d="M65,35 L75,35 L85,48 L85,70 L65,70 Z" fill="#f1f5f9"/><rect x="20" y="48" width="60" height="8" fill="#ef4444"/><rect x="42" y="40" width="6" height="24" fill="#ef4444"/><rect x="33" y="49" width="24" height="6" fill="#ef4444"/><polygon points="45,22 55,22 53,35 47,35" fill="#3b82f6"/><circle cx="30" cy="70" r="9" fill="#1e293b"/><circle cx="72" cy="70" r="9" fill="#1e293b"/></svg>`,
+        play: () => {
+          const ctx = getAudioContext();
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(620, now);
+          osc.frequency.linearRampToValueAtTime(920, now + 0.25);
+          osc.frequency.linearRampToValueAtTime(620, now + 0.5);
+          osc.frequency.linearRampToValueAtTime(920, now + 0.75);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.95);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.95);
+          speakText("Wiu wiu wiu!", 1.1, 1.2);
+        }
+      }
+    };
+
+    // Array list of keys
+    const ALL_KEYS = Object.keys(SOUND_LIBRARY);
+
+    /* --------------------------------------------------------------------------
+       REWARD & FEEDBACK SOUND EFFECTS
+       -------------------------------------------------------------------------- */
+    function playVictorySound() {
+      if (isMuted) return;
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const notes = [261.63, 329.63, 392.00, 523.25]; // C E G C
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+        gain.gain.setValueAtTime(0.3, now + idx * 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now + idx * 0.1);
+        osc.stop(now + idx * 0.1 + 0.3);
+      });
+
+      // Confetti effect
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+      }
+    }
+
+    function playWrongSound() {
+      if (isMuted) return;
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+      gain.gain.setValueAtTime(0.3, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    }
+
+    /* --------------------------------------------------------------------------
+       UI SCREEN NAVIGATION FUNCTIONS
+       -------------------------------------------------------------------------- */
+    function goHome() {
+      showLevelSelect();
+    }
+
+    function toggleDskpModal() {
+      const modal = document.getElementById('modal-dskp');
+      modal.classList.toggle('hidden');
+    }
+
+    function toggleAudioMute() {
+      isMuted = !isMuted;
+      const btn = document.getElementById('btn-sound-toggle');
+      if (isMuted) {
+        btn.textContent = '🔇 Audio: OFF';
+        btn.classList.replace('bg-emerald-500', 'bg-slate-500');
+      } else {
+        btn.textContent = '🔊 Audio: ON';
+        btn.classList.replace('bg-slate-500', 'bg-emerald-500');
+      }
+    }
+
+    function selectLevel(levelNum) {
+      currentLevel = levelNum;
+      const displayLabel = document.getElementById('badge-level-display');
+      if (levelNum === 1) {
+        displayLabel.textContent = 'Aras: 1 (Mudah)';
+        displayLabel.className = 'px-3 py-1 bg-emerald-600 text-white rounded-lg text-sm font-bold';
+      } else if (levelNum === 2) {
+        displayLabel.textContent = 'Aras: 2 (Sederhana)';
+        displayLabel.className = 'px-3 py-1 bg-amber-600 text-white rounded-lg text-sm font-bold';
+      } else {
+        displayLabel.textContent = 'Aras: 3 (Mencabar)';
+        displayLabel.className = 'px-3 py-1 bg-rose-600 text-white rounded-lg text-sm font-bold';
+      }
+
+      document.getElementById('screen-level-select').classList.add('hidden');
+      document.getElementById('screen-activity-workspace').classList.add('hidden');
+      document.getElementById('screen-activity-menu').classList.remove('hidden');
+      document.getElementById('btn-back-level').classList.remove('hidden');
+
+      speakText(`Aras ${levelNum} dipilih. Sila pilih aktiviti.`);
+    }
+
+    function showLevelSelect() {
+      document.getElementById('screen-level-select').classList.remove('hidden');
+      document.getElementById('screen-activity-menu').classList.add('hidden');
+      document.getElementById('screen-activity-workspace').classList.add('hidden');
+      document.getElementById('btn-back-level').classList.add('hidden');
+    }
+
+    function backToActivityMenu() {
+      document.getElementById('screen-activity-workspace').classList.add('hidden');
+      document.getElementById('screen-activity-menu').classList.remove('hidden');
+    }
+
+    function startActivity(actNum) {
+      currentActivity = actNum;
+      document.getElementById('screen-activity-menu').classList.add('hidden');
+      document.getElementById('screen-activity-workspace').classList.remove('hidden');
+
+      const titleEl = document.getElementById('act-title');
+      const subEl = document.getElementById('act-subtitle');
+
+      const titles = [
+        "",
+        "Aktiviti 1: Mengecam Bunyi",
+        "Aktiviti 2: Padanan Bunyi & Gambar",
+        "Aktiviti 3: Drag & Drop (Pengelasan)",
+        "Aktiviti 4: Permainan Memori Audio",
+        "Aktiviti 5: Betul atau Salah",
+        "Aktiviti 6: Menyusun Urutan Bunyi",
+        "Aktiviti 7: Puzzle 4 Gambar"
+      ];
+
+      const subtitles = [
+        "",
+        "Tekan butang dengar & pilih gambar yang betul",
+        "Padankan ikon bunyi dengan kad gambar yang sesuai",
+        "Kelaskan gambar/bunyi ke dalam kotak kategori yang betul",
+        "Buka kad dan cari pasangan bunyi dan gambar yang sama",
+        "Dengar bunyi dan tentukan sama ada soalan BETUL atau SALAH",
+        "Dengar siri urutan bunyi dan susun mengikut giliran",
+        "Susun 4 kepingan puzzle untuk melengkapkan gambar"
+      ];
+
+      titleEl.textContent = titles[actNum];
+      subEl.textContent = subtitles[actNum];
+
+      // Render corresponding activity
+      if (actNum === 1) renderActivity1();
+      else if (actNum === 2) renderActivity2();
+      else if (actNum === 3) renderActivity3();
+      else if (actNum === 4) renderActivity4();
+      else if (actNum === 5) renderActivity5();
+      else if (actNum === 6) renderActivity6();
+      else if (actNum === 7) renderActivity7();
+    }
+
+    function updateScore(points) {
+      totalScore += points;
+      document.getElementById('act-score-badge').textContent = `⭐ Skor: ${totalScore}`;
+    }
+
+    function showFeedback(message, isSuccess = true) {
+      const fb = document.getElementById('activity-feedback');
+      fb.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+      if (isSuccess) {
+        fb.classList.add('bg-emerald-100', 'text-emerald-800');
+        fb.innerHTML = `🎉 ${message}`;
+      } else {
+        fb.classList.add('bg-rose-100', 'text-rose-800');
+        fb.innerHTML = `💡 ${message}`;
+      }
+    }
+
+    /* Helper: Utility to shuffle array */
+    function shuffleArray(arr) {
+      return [...arr].sort(() => Math.random() - 0.5);
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 1: MENGECAM BUNYI (IDENTIFICATION)
+       ========================================================================== */
+    let act1Target = null;
+
+    function renderActivity1() {
+      const container = document.getElementById('activity-container');
+      
+      // Determine options count based on level
+      const optionCount = currentLevel === 1 ? 2 : currentLevel === 2 ? 3 : 4;
+      
+      // Pick random target
+      const targetKey = ALL_KEYS[Math.floor(Math.random() * ALL_KEYS.length)];
+      act1Target = SOUND_LIBRARY[targetKey];
+
+      // Pick distractors
+      const otherKeys = ALL_KEYS.filter(k => k !== targetKey);
+      const shuffledOthers = shuffleArray(otherKeys).slice(0, optionCount - 1);
+      const optionsKeys = shuffleArray([targetKey, ...shuffledOthers]);
+
+      let optionsHtml = '';
+      optionsKeys.forEach(key => {
+        const item = SOUND_LIBRARY[key];
+        optionsHtml += `
+          <div onclick="checkActivity1('${item.id}')" class="card-hover bg-white border-4 border-slate-200 hover:border-indigo-400 rounded-3xl p-4 cursor-pointer shadow-lg flex flex-col items-center justify-center aspect-square transition-all">
+            <div class="w-24 h-24 sm:w-28 sm:h-28 mb-2">
+              ${item.svg}
+            </div>
+            <span class="font-bold text-base sm:text-lg text-slate-800">${item.name}</span>
+          </div>
+        `;
+      });
+
+      container.innerHTML = `
+        <div class="w-full flex flex-col items-center space-y-6">
+          <button onclick="playAct1Sound()" class="pulse-glow bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-extrabold px-8 py-4 rounded-2xl text-lg sm:text-xl shadow-xl flex items-center gap-3 transition-transform">
+            <span class="text-3xl">🔊</span> Tekan Untuk Dengar Bunyi
+          </button>
+
+          ${currentLevel === 1 ? `<p class="text-xs text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">Petunjuk: Dengar bunyi ini dengan teliti lalu pilih 1 daripada 2 gambar di bawah!</p>` : ''}
+
+          <div class="grid grid-cols-2 ${optionCount >= 3 ? 'sm:grid-cols-3' : ''} ${optionCount === 4 ? 'lg:grid-cols-4' : ''} gap-4 sm:gap-6 w-full max-w-3xl mt-4">
+            ${optionsHtml}
+          </div>
+        </div>
+      `;
+
+      showFeedback("Sila tekan butang oren di atas untuk mendengar bunyi!", true);
+    }
+
+    function playAct1Sound() {
+      if (act1Target) {
+        act1Target.play();
+      }
+    }
+
+    function checkActivity1(selectedId) {
+      if (selectedId === act1Target.id) {
+        playVictorySound();
+        updateScore(10);
+        speakText("Syabas! Jawapan anda betul!");
+        showFeedback(`Tepat sekali! Ini ialah bunyi <strong>${act1Target.name}</strong>. Syabas!`, true);
+        setTimeout(renderActivity1, 2000);
+      } else {
+        playWrongSound();
+        speakText("Cuba lagi ya!");
+        showFeedback("Kurang tepat. Sila cuba lagi!", false);
+      }
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 2: PADANAN BUNYI & GAMBAR (MATCHING)
+       ========================================================================== */
+    let act2ActiveSoundId = null;
+    let act2MatchesCount = 0;
+    let act2TotalPairs = 3;
+
+    function renderActivity2() {
+      const container = document.getElementById('activity-container');
+      act2ActiveSoundId = null;
+      act2MatchesCount = 0;
+      act2TotalPairs = currentLevel === 1 ? 2 : currentLevel === 2 ? 3 : 4;
+
+      const chosenKeys = shuffleArray(ALL_KEYS).slice(0, act2TotalPairs);
+      const soundKeys = shuffleArray(chosenKeys);
+      const imageKeys = shuffleArray(chosenKeys);
+
+      let soundColsHtml = soundKeys.map((key, idx) => `
+        <button id="act2-snd-${key}" onclick="selectAct2Sound('${key}')" class="w-full bg-indigo-100 hover:bg-indigo-200 border-2 border-indigo-400 rounded-2xl p-3 flex items-center justify-between shadow transition-all font-bold text-indigo-900 text-sm sm:text-base">
+          <span>🔊 Bunyi #${idx + 1}</span>
+          <span class="text-xs bg-indigo-500 text-white px-2 py-1 rounded-lg">Dengar</span>
+        </button>
+      `).join('');
+
+      let imageColsHtml = imageKeys.map(key => {
+        const item = SOUND_LIBRARY[key];
+        return `
+          <div id="act2-img-${key}" onclick="selectAct2Image('${key}')" class="card-hover bg-white border-2 border-slate-300 hover:border-pink-400 rounded-2xl p-2 cursor-pointer shadow flex flex-col items-center">
+            <div class="w-16 h-16 sm:w-20 sm:h-20">
+              ${item.svg}
+            </div>
+            <span class="text-xs font-bold text-slate-700 mt-1">${item.name}</span>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="w-full max-w-3xl space-y-4">
+          <p class="text-center text-xs sm:text-sm text-slate-600 bg-slate-100 p-2 rounded-xl">
+            <strong>Langkah:</strong> 1. Tekan butang bunyi di kiri -> 2. Tekan gambar padanannya di kanan!
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+            <div class="space-y-3">
+              <h4 class="font-bold text-indigo-900 text-center">Senarai Bunyi</h4>
+              ${soundColsHtml}
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              ${imageColsHtml}
+            </div>
+          </div>
+        </div>
+      `;
+
+      showFeedback("Sila pilih satu butang bunyi dahulu.", true);
+    }
+
+    function selectAct2Sound(key) {
+      act2ActiveSoundId = key;
+      SOUND_LIBRARY[key].play();
+
+      // Highlight selected sound button
+      ALL_KEYS.forEach(k => {
+        const btn = document.getElementById(`act2-snd-${k}`);
+        if (btn) btn.classList.remove('ring-4', 'ring-amber-400');
+      });
+
+      const activeBtn = document.getElementById(`act2-snd-${key}`);
+      if (activeBtn) activeBtn.classList.add('ring-4', 'ring-amber-400');
+
+      showFeedback(`Bunyi dipilih! Sekarang tekan gambar yang sesuai.`, true);
+    }
+
+    function selectAct2Image(key) {
+      if (!act2ActiveSoundId) {
+        speakText("Sila tekan butang bunyi di sebelah kiri dahulu!");
+        showFeedback("Sila tekan butang bunyi di sebelah kiri dahulu!", false);
+        return;
+      }
+
+      if (act2ActiveSoundId === key) {
+        playVictorySound();
+        updateScore(10);
+        act2MatchesCount++;
+
+        // Disable matched pair
+        const sndBtn = document.getElementById(`act2-snd-${key}`);
+        const imgCard = document.getElementById(`act2-img-${key}`);
+
+        if (sndBtn) {
+          sndBtn.disabled = true;
+          sndBtn.className = "w-full bg-emerald-200 border-2 border-emerald-500 rounded-2xl p-3 flex items-center justify-between text-emerald-900 font-bold opacity-60 cursor-not-allowed";
+          sndBtn.innerHTML = `<span>✓ Berjaya Dipadankan</span>`;
+        }
+
+        if (imgCard) {
+          imgCard.onclick = null;
+          imgCard.className = "bg-emerald-100 border-4 border-emerald-500 rounded-2xl p-2 flex flex-col items-center opacity-60";
+        }
+
+        act2ActiveSoundId = null;
+
+        if (act2MatchesCount >= act2TotalPairs) {
+          speakText("Tahniah! Semua padanan berjaya!");
+          showFeedback("Tahniah! Semua padanan berjaya dilengkapkan!", true);
+          setTimeout(renderActivity2, 2500);
+        } else {
+          showFeedback("Padanan betul! Teruskan padankan yang lain.", true);
+        }
+      } else {
+        playWrongSound();
+        speakText("Bukan gambar ini. Cuba lagi!");
+        showFeedback("Padanan tidak tepat. Sila cuba lagi!", false);
+      }
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 3: DRAG & DROP / PENGELASAN (CLASSIFICATION)
+       ========================================================================== */
+    let act3Items = [];
+    let act3SelectedId = null;
+
+    function renderActivity3() {
+      const container = document.getElementById('activity-container');
+      act3SelectedId = null;
+
+      const itemCount = currentLevel === 1 ? 3 : currentLevel === 2 ? 4 : 6;
+      act3Items = shuffleArray(ALL_KEYS).slice(0, itemCount);
+
+      let poolHtml = act3Items.map(key => {
+        const item = SOUND_LIBRARY[key];
+        return `
+          <div id="act3-item-${key}" draggable="true" ondragstart="handleAct3DragStart(event, '${key}')" onclick="selectAct3TapItem('${key}')" class="card-hover bg-white border-2 border-slate-300 hover:border-amber-400 rounded-2xl p-2 cursor-pointer shadow flex flex-col items-center w-24 h-24 sm:w-28 sm:h-28">
+            <div class="w-12 h-12 sm:w-16 sm:h-16">${item.svg}</div>
+            <span class="text-xs font-bold text-slate-800 mt-1">${item.name}</span>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="w-full max-w-4xl space-y-6">
+          <p class="text-center text-xs sm:text-sm text-slate-600 bg-slate-100 p-2 rounded-xl">
+            <strong>Cara Bermain:</strong> Tarik gambar (drag) ATAU tekan gambar lalu tekan kotak kategori di bawah!
+          </p>
+
+          <!-- Item Pool -->
+          <div id="act3-pool" class="flex flex-wrap justify-center gap-3 p-4 bg-amber-50 rounded-2xl border-2 border-amber-200 min-h-[110px]">
+            ${poolHtml}
+          </div>
+
+          <!-- Baskets / Categories -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- Box 1: Haiwan -->
+            <div ondragover="event.preventDefault()" ondrop="handleAct3Drop(event, 'haiwan')" onclick="tapAct3Category('haiwan')" class="bg-gradient-to-b from-emerald-100 to-teal-100 border-4 border-dashed border-emerald-400 rounded-3xl p-4 text-center min-h-[160px] flex flex-col items-center justify-start cursor-pointer hover:bg-emerald-200 transition-colors">
+              <div class="text-3xl mb-1">🐱</div>
+              <h4 class="font-bold text-emerald-900 text-lg">Haiwan</h4>
+              <div id="act3-box-haiwan" class="flex flex-wrap justify-center gap-2 mt-2 w-full"></div>
+            </div>
+
+            <!-- Box 2: Manusia -->
+            <div ondragover="event.preventDefault()" ondrop="handleAct3Drop(event, 'manusia')" onclick="tapAct3Category('manusia')" class="bg-gradient-to-b from-blue-100 to-indigo-100 border-4 border-dashed border-blue-400 rounded-3xl p-4 text-center min-h-[160px] flex flex-col items-center justify-start cursor-pointer hover:bg-blue-200 transition-colors">
+              <div class="text-3xl mb-1">😃</div>
+              <h4 class="font-bold text-blue-900 text-lg">Manusia</h4>
+              <div id="act3-box-manusia" class="flex flex-wrap justify-center gap-2 mt-2 w-full"></div>
+            </div>
+
+            <!-- Box 3: Kenderaan -->
+            <div ondragover="event.preventDefault()" ondrop="handleAct3Drop(event, 'kenderaan')" onclick="tapAct3Category('kenderaan')" class="bg-gradient-to-b from-rose-100 to-pink-100 border-4 border-dashed border-rose-400 rounded-3xl p-4 text-center min-h-[160px] flex flex-col items-center justify-start cursor-pointer hover:bg-rose-200 transition-colors">
+              <div class="text-3xl mb-1">🚗</div>
+              <h4 class="font-bold text-rose-900 text-lg">Kenderaan</h4>
+              <div id="act3-box-kenderaan" class="flex flex-wrap justify-center gap-2 mt-2 w-full"></div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      showFeedback("Tarik atau tekan gambar di atas untuk dikelaskan.", true);
+    }
+
+    function handleAct3DragStart(ev, key) {
+      ev.dataTransfer.setData("text/plain", key);
+      SOUND_LIBRARY[key].play();
+    }
+
+    function selectAct3TapItem(key) {
+      act3SelectedId = key;
+      SOUND_LIBRARY[key].play();
+
+      act3Items.forEach(k => {
+        const el = document.getElementById(`act3-item-${k}`);
+        if (el) el.classList.remove('ring-4', 'ring-amber-500');
+      });
+
+      const selectedEl = document.getElementById(`act3-item-${key}`);
+      if (selectedEl) selectedEl.classList.add('ring-4', 'ring-amber-500');
+
+      showFeedback(`Gambar ${SOUND_LIBRARY[key].name} dipilih! Sila tekan kotak kategori jawapan.`, true);
+    }
+
+    function handleAct3Drop(ev, targetCategory) {
+      ev.preventDefault();
+      const key = ev.dataTransfer.getData("text/plain");
+      if (key) processAct3Placement(key, targetCategory);
+    }
+
+    function tapAct3Category(category) {
+      if (act3SelectedId) {
+        processAct3Placement(act3SelectedId, category);
+      }
+    }
+
+    function processAct3Placement(key, targetCategory) {
+      const item = SOUND_LIBRARY[key];
+      if (!item) return;
+
+      if (item.category === targetCategory) {
+        playVictorySound();
+        updateScore(10);
+
+        // Move element into category box
+        const targetBox = document.getElementById(`act3-box-${targetCategory}`);
+        const itemEl = document.getElementById(`act3-item-${key}`);
+
+        if (itemEl && targetBox) {
+          itemEl.onclick = null;
+          itemEl.removeAttribute('draggable');
+          itemEl.className = "bg-white border-2 border-emerald-400 rounded-xl p-1 flex flex-col items-center w-16 h-16 shadow";
+          targetBox.appendChild(itemEl);
+        }
+
+        act3Items = act3Items.filter(k => k !== key);
+        act3SelectedId = null;
+
+        if (act3Items.length === 0) {
+          speakText("Syabas! Pengelasan berjaya dilengkapkan!");
+          showFeedback("Hebat! Semua item berjaya dikelaskan!", true);
+          setTimeout(renderActivity3, 2500);
+        } else {
+          showFeedback(`Betul! ${item.name} tergolong dalam ${targetCategory}.`, true);
+        }
+      } else {
+        playWrongSound();
+        speakText(`Kurang tepat. ${item.name} bukan kategori ${targetCategory}.`);
+        showFeedback(`Salah! ${item.name} bukan kategori ${targetCategory}.`, false);
+      }
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 4: PERMAINAN MEMORI (MEMORY MATCH CARDS)
+       ========================================================================== */
+    let act4Cards = [];
+    let act4FlippedCards = [];
+    let act4Matches = 0;
+    let act4TotalPairs = 2;
+
+    function renderActivity4() {
+      const container = document.getElementById('activity-container');
+      act4FlippedCards = [];
+      act4Matches = 0;
+      act4TotalPairs = currentLevel === 1 ? 2 : currentLevel === 2 ? 3 : 4;
+
+      const keys = shuffleArray(ALL_KEYS).slice(0, act4TotalPairs);
+
+      // Create pairs: 1 sound card & 1 picture card per key
+      let cardsDeck = [];
+      keys.forEach(k => {
+        cardsDeck.push({ id: `sound-${k}`, key: k, type: 'sound' });
+        cardsDeck.push({ id: `img-${k}`, key: k, type: 'image' });
+      });
+
+      act4Cards = shuffleArray(cardsDeck);
+
+      let gridCols = act4TotalPairs === 2 ? 'grid-cols-2' : act4TotalPairs === 3 ? 'grid-cols-3' : 'grid-cols-4';
+
+      let cardsHtml = act4Cards.map((card, idx) => `
+        <div onclick="flipAct4Card(${idx})" id="act4-card-${idx}" class="perspective-1000 w-24 h-28 sm:w-28 sm:h-36 cursor-pointer">
+          <div id="act4-inner-${idx}" class="transform-style-3d relative w-full h-full rounded-2xl shadow-md border-2 border-slate-300 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold">
+            <!-- Front Face (Hidden initially) -->
+            <div class="absolute inset-0 backface-hidden flex items-center justify-center">
+              ❓
+            </div>
+            <!-- Back Face (Revealed on click) -->
+            <div class="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-2xl p-2 flex flex-col items-center justify-center text-slate-800">
+              ${card.type === 'sound' ? 
+                `<div class="text-3xl mb-1">🔊</div><span class="text-xs font-bold text-indigo-700">Bunyi ${SOUND_LIBRARY[card.key].name}</span>` : 
+                `<div class="w-16 h-16">${SOUND_LIBRARY[card.key].svg}</div><span class="text-xs font-bold text-slate-700">${SOUND_LIBRARY[card.key].name}</span>`}
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="w-full max-w-2xl flex flex-col items-center space-y-4">
+          <p class="text-xs sm:text-sm text-slate-600 bg-slate-100 p-2 rounded-xl text-center">
+            Cari pasangan antara <strong>Kad Bunyi 🔊</strong> dan <strong>Kad Gambar 🖼️</strong> yang sepadan!
+          </p>
+
+          <div class="grid ${gridCols} gap-4 justify-center">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+
+      showFeedback("Sila buka kad pertama!", true);
+    }
+
+    function flipAct4Card(idx) {
+      if (act4FlippedCards.length >= 2) return;
+      const cardObj = act4Cards[idx];
+
+      const inner = document.getElementById(`act4-inner-${idx}`);
+      if (inner.classList.contains('flipped')) return;
+
+      inner.classList.add('flipped');
+      act4FlippedCards.push({ idx, cardObj });
+
+      // Play sound upon flip
+      SOUND_LIBRARY[cardObj.key].play();
+
+      if (act4FlippedCards.length === 2) {
+        const [c1, c2] = act4FlippedCards;
+
+        if (c1.cardObj.key === c2.cardObj.key && c1.cardObj.type !== c2.cardObj.type) {
+          // MATCH!
+          playVictorySound();
+          updateScore(10);
+          act4Matches++;
+
+          showFeedback("Pasangan sepadan! Syabas!", true);
+          act4FlippedCards = [];
+
+          if (act4Matches >= act4TotalPairs) {
+            speakText("Hebat! Anda berjaya ingati semua kad memori!");
+            showFeedback("Tahniah! Semua kad berjaya dipadankan!", true);
+            setTimeout(renderActivity4, 2500);
+          }
+        } else {
+          // MISMATCH
+          playWrongSound();
+          showFeedback("Bukan pasangan yang sama. Sila cuba lagi!", false);
+
+          setTimeout(() => {
+            document.getElementById(`act4-inner-${c1.idx}`).classList.remove('flipped');
+            document.getElementById(`act4-inner-${c2.idx}`).classList.remove('flipped');
+            act4FlippedCards = [];
+          }, 1200);
+        }
+      }
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 5: BETUL ATAU SALAH (TRUE / FALSE)
+       ========================================================================== */
+    let act5TargetSound = null;
+    let act5DisplayImage = null;
+    let act5IsCorrect = true;
+
+    function renderActivity5() {
+      const container = document.getElementById('activity-container');
+
+      const soundKey = ALL_KEYS[Math.floor(Math.random() * ALL_KEYS.length)];
+      act5TargetSound = SOUND_LIBRARY[soundKey];
+
+      act5IsCorrect = Math.random() > 0.5;
+
+      if (act5IsCorrect) {
+        act5DisplayImage = act5TargetSound;
+      } else {
+        const otherKeys = ALL_KEYS.filter(k => k !== soundKey);
+        const randOther = otherKeys[Math.floor(Math.random() * otherKeys.length)];
+        act5DisplayImage = SOUND_LIBRARY[randOther];
+      }
+
+      container.innerHTML = `
+        <div class="w-full max-w-md flex flex-col items-center space-y-6">
+          <button onclick="act5TargetSound.play()" class="pulse-glow bg-amber-500 hover:bg-amber-600 text-white font-extrabold px-6 py-3 rounded-2xl text-lg shadow-lg flex items-center gap-2">
+            🔊 Tekan Dengar Bunyi
+          </button>
+
+          <div class="bg-white border-4 border-indigo-200 rounded-3xl p-6 shadow-xl flex flex-col items-center w-full">
+            <div class="w-32 h-32 mb-3">${act5DisplayImage.svg}</div>
+            <h3 class="text-xl font-bold text-slate-800 text-center">Adakah ini bunyi ${act5DisplayImage.name}?</h3>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4 w-full">
+            <button onclick="checkActivity5(true)" class="card-hover bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-4 rounded-2xl text-xl shadow-lg flex items-center justify-center gap-2">
+              ✔️ BETUL
+            </button>
+            <button onclick="checkActivity5(false)" class="card-hover bg-rose-500 hover:bg-rose-600 text-white font-extrabold py-4 rounded-2xl text-xl shadow-lg flex items-center justify-center gap-2">
+              ✖️ SALAH
+            </button>
+          </div>
+        </div>
+      `;
+
+      showFeedback("Dengar bunyi dahulu, kemudian jawab BETUL atau SALAH.", true);
+    }
+
+    function checkActivity5(userChoice) {
+      if (userChoice === act5IsCorrect) {
+        playVictorySound();
+        updateScore(10);
+        speakText("Jawapan anda BETUL! Syabas!");
+        showFeedback(`Tepat sekali! Jawapan anda BETUL.`, true);
+        setTimeout(renderActivity5, 2000);
+      } else {
+        playWrongSound();
+        speakText("Jawapan tidak tepat. Cuba lagi!");
+        showFeedback(`Kurang tepat. Sila cuba soalan seterusnya!`, false);
+        setTimeout(renderActivity5, 2000);
+      }
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 6: MENYUSUN URUTAN BUNYI (SEQUENCING)
+       ========================================================================== */
+    let act6Sequence = [];
+    let act6UserSequence = [];
+
+    function renderActivity6() {
+      const container = document.getElementById('activity-container');
+      const seqLength = currentLevel === 1 ? 2 : currentLevel === 2 ? 3 : 4;
+
+      act6Sequence = shuffleArray(ALL_KEYS).slice(0, seqLength);
+      act6UserSequence = [];
+
+      let slotsHtml = '';
+      for (let i = 0; i < seqLength; i++) {
+        slotsHtml += `
+          <div id="act6-slot-${i}" onclick="removeAct6Slot(${i})" class="w-20 h-24 sm:w-24 sm:h-28 border-4 border-dashed border-indigo-300 rounded-2xl bg-indigo-50/50 flex flex-col items-center justify-center cursor-pointer hover:bg-indigo-100 transition-colors">
+            <span class="text-xs text-indigo-400 font-bold mb-1">Ke-${i+1}</span>
+            <div id="act6-slot-content-${i}" class="text-sm font-bold text-slate-400">Kosong</div>
+          </div>
+        `;
+      }
+
+      let bankKeys = shuffleArray([...act6Sequence]);
+      let bankHtml = bankKeys.map(key => {
+        const item = SOUND_LIBRARY[key];
+        return `
+          <div onclick="addAct6ToSlot('${key}')" class="card-hover bg-white border-2 border-slate-300 hover:border-indigo-400 rounded-2xl p-2 cursor-pointer shadow flex flex-col items-center w-20 h-20 sm:w-24 sm:h-24">
+            <div class="w-12 h-12 sm:w-14 sm:h-14">${item.svg}</div>
+            <span class="text-xs font-bold text-slate-800">${item.name}</span>
+          </div>
+        `;
+      }).join('');
+
+      container.innerHTML = `
+        <div class="w-full max-w-3xl flex flex-col items-center space-y-6">
+          <button onclick="playAct6Sequence()" class="pulse-glow bg-cyan-600 hover:bg-cyan-700 text-white font-extrabold px-6 py-3 rounded-2xl text-base sm:text-lg shadow-lg flex items-center gap-2">
+            🔊 Dengar Urutan Bunyi (${seqLength} Bunyi)
+          </button>
+
+          <!-- Slots -->
+          <div class="flex flex-wrap justify-center gap-3">
+            ${slotsHtml}
+          </div>
+
+          <!-- Bank -->
+          <div class="w-full bg-slate-100 p-4 rounded-2xl border border-slate-200">
+            <p class="text-center text-xs font-bold text-slate-500 mb-3">Tekan gambar mengikut urutan yang didengari:</p>
+            <div class="flex flex-wrap justify-center gap-3">
+              ${bankHtml}
+            </div>
+          </div>
+
+          <button onclick="checkActivity6()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold px-8 py-3 rounded-2xl shadow-lg text-lg">
+            ✔️ Semak Jawapan
+          </button>
+        </div>
+      `;
+
+      showFeedback("Tekan butang biru di atas untuk mendengar siri urutan bunyi.", true);
+    }
+
+    function playAct6Sequence() {
+      showFeedback("Sila dengar urutan bunyi...", true);
+      act6Sequence.forEach((key, idx) => {
+        setTimeout(() => {
+          SOUND_LIBRARY[key].play();
+        }, idx * 1400);
+      });
+    }
+
+    function addAct6ToSlot(key) {
+      const seqLength = act6Sequence.length;
+      if (act6UserSequence.length >= seqLength) return;
+
+      act6UserSequence.push(key);
+      const slotIdx = act6UserSequence.length - 1;
+
+      const item = SOUND_LIBRARY[key];
+      const slotContent = document.getElementById(`act6-slot-content-${slotIdx}`);
+      if (slotContent) {
+        slotContent.innerHTML = `<div class="w-12 h-12">${item.svg}</div><span class="text-[10px] text-slate-800 font-bold">${item.name}</span>`;
+      }
+
+      SOUND_LIBRARY[key].play();
+    }
+
+    function removeAct6Slot(slotIdx) {
+      if (slotIdx < act6UserSequence.length) {
+        act6UserSequence.splice(slotIdx, 1);
+        // Refresh display
+        const seqLength = act6Sequence.length;
+        for (let i = 0; i < seqLength; i++) {
+          const slotContent = document.getElementById(`act6-slot-content-${i}`);
+          if (i < act6UserSequence.length) {
+            const item = SOUND_LIBRARY[act6UserSequence[i]];
+            slotContent.innerHTML = `<div class="w-12 h-12">${item.svg}</div><span class="text-[10px] text-slate-800 font-bold">${item.name}</span>`;
+          } else {
+            slotContent.innerHTML = `<span class="text-sm font-bold text-slate-400">Kosong</span>`;
+          }
+        }
+      }
+    }
+
+    function checkActivity6() {
+      if (act6UserSequence.length < act6Sequence.length) {
+        speakText("Sila isikan semua petak urutan dahulu!");
+        showFeedback("Sila isikan semua petak urutan dahulu!", false);
+        return;
+      }
+
+      let isCorrect = true;
+      for (let i = 0; i < act6Sequence.length; i++) {
+        if (act6UserSequence[i] !== act6Sequence[i]) {
+          isCorrect = false;
+          break;
+        }
+      }
+
+      if (isCorrect) {
+        playVictorySound();
+        updateScore(15);
+        speakText("Syabas! Urutan bunyi anda betul 100%!");
+        showFeedback("Tahniah! Urutan bunyi disusun dengan sempurna!", true);
+        setTimeout(renderActivity6, 2500);
+      } else {
+        playWrongSound();
+        speakText("Urutan kurang tepat. Sila dengar semula!");
+        showFeedback("Urutan tidak tepat. Sila dengar semula dan susun lagi!", false);
+      }
+    }
+
+
+    /* ==========================================================================
+       AKTIVITI 7: PUZZLE 4 GAMBAR (4-PIECE IMAGE PUZZLE)
+       ========================================================================== */
+    let act7TargetItem = null;
+    let act7BoardState = [null, null, null, null]; // 4 slots
+    let act7SelectedPiece = null;
+
+    function renderActivity7() {
+      const container = document.getElementById('activity-container');
+      const key = ALL_KEYS[Math.floor(Math.random() * ALL_KEYS.length)];
+      act7TargetItem = SOUND_LIBRARY[key];
+
+      act7BoardState = [null, null, null, null];
+      act7SelectedPiece = null;
+
+      // Pieces IDs: 0 (TL), 1 (TR), 2 (BL), 3 (BR)
+      let pieces = shuffleArray([0, 1, 2, 3]);
+
+      let boardSlotsHtml = [0, 1, 2, 3].map(i => `
+        <div id="act7-slot-${i}" onclick="tapAct7Slot(${i})" ondragover="event.preventDefault()" ondrop="dropAct7Piece(event, ${i})" class="w-28 h-28 sm:w-32 sm:h-32 bg-slate-100 border-2 border-dashed border-purple-300 rounded-xl flex items-center justify-center relative overflow-hidden">
+          <span class="text-xs text-slate-300 font-bold">Petak ${i+1}</span>
+          <div id="act7-slot-content-${i}" class="absolute inset-0"></div>
+        </div>
+      `).join('');
+
+      let piecesBankHtml = pieces.map(pIdx => `
+        <div id="act7-piece-${pIdx}" draggable="true" ondragstart="dragStartAct7Piece(event, ${pIdx})" onclick="tapAct7Piece(${pIdx})" class="card-hover w-24 h-24 sm:w-28 sm:h-28 bg-white border-2 border-purple-400 rounded-xl cursor-pointer shadow relative overflow-hidden">
+          ${getPuzzlePieceSvg(act7TargetItem.svg, pIdx)}
+        </div>
+      `).join('');
+
+      container.innerHTML = `
+        <div class="w-full max-w-3xl flex flex-col items-center space-y-6">
+          <p class="text-xs sm:text-sm text-slate-600 bg-slate-100 p-2 rounded-xl text-center">
+            Susun 4 kepingan puzzle di bawah ke dalam grid untuk melengkapkan gambar <strong>${act7TargetItem.name}</strong>!
+          </p>
+
+          <!-- 2x2 Target Board -->
+          <div class="grid grid-cols-2 gap-2 p-3 bg-purple-200/60 rounded-2xl border-4 border-purple-400">
+            ${boardSlotsHtml}
+          </div>
+
+          <!-- Pieces Bank -->
+          <div class="w-full bg-purple-50 p-4 rounded-2xl border border-purple-200">
+            <p class="text-center text-xs font-bold text-purple-700 mb-3">Kepingan Puzzle:</p>
+            <div id="act7-bank" class="flex flex-wrap justify-center gap-3">
+              ${piecesBankHtml}
+            </div>
+          </div>
+        </div>
+      `;
+
+      showFeedback("Pilih kepingan puzzle dan masukkan ke dalam petak sasaran.", true);
+    }
+
+    /* Helper: Returns SVG cropped piece simulation using scale and translate transform */
+    function getPuzzlePieceSvg(svgString, pieceIdx) {
+      // 0: Top-Left (0,0), 1: Top-Right (-100%, 0), 2: Bottom-Left (0, -100%), 3: Bottom-Right (-100%, -100%)
+      const transforms = [
+        "scale(2) translate(25%, 25%)",
+        "scale(2) translate(-25%, 25%)",
+        "scale(2) translate(25%, -25%)",
+        "scale(2) translate(-25%, -25%)"
+      ];
+
+      return `<div class="w-full h-full relative overflow-hidden rounded-lg">
+        <div class="w-full h-full transform transition-transform" style="transform: ${transforms[pieceIdx]}">
+          ${svgString}
+        </div>
+      </div>`;
+    }
+
+    function dragStartAct7Piece(ev, pieceIdx) {
+      ev.dataTransfer.setData("text/plain", pieceIdx.toString());
+    }
+
+    function tapAct7Piece(pieceIdx) {
+      act7SelectedPiece = pieceIdx;
+      showFeedback(`Kepingan ${pieceIdx + 1} dipilih! Sekarang tekan petak sasaran di atas.`, true);
+    }
+
+    function dropAct7Piece(ev, slotIdx) {
+      ev.preventDefault();
+      const pieceIdx = parseInt(ev.dataTransfer.getData("text/plain"));
+      if (!isNaN(pieceIdx)) placeAct7Piece(pieceIdx, slotIdx);
+    }
+
+    function tapAct7Slot(slotIdx) {
+      if (act7SelectedPiece !== null) {
+        placeAct7Piece(act7SelectedPiece, slotIdx);
+      }
+    }
+
+    function placeAct7Piece(pieceIdx, slotIdx) {
+      if (act7BoardState[slotIdx] !== null) return; // slot occupied
+
+      act7BoardState[slotIdx] = pieceIdx;
+
+      // Hide from bank
+      const pieceEl = document.getElementById(`act7-piece-${pieceIdx}`);
+      if (pieceEl) pieceEl.style.display = 'none';
+
+      // Render into slot
+      const slotContent = document.getElementById(`act7-slot-content-${slotIdx}`);
+      if (slotContent) {
+        slotContent.innerHTML = getPuzzlePieceSvg(act7TargetItem.svg, pieceIdx);
+      }
+
+      act7SelectedPiece = null;
+
+      // Check if all slots filled
+      if (act7BoardState.every(s => s !== null)) {
+        checkActivity7();
+      }
+    }
+
+    function checkActivity7() {
+      // Correct order is [0, 1, 2, 3]
+      const isCorrect = act7BoardState.every((val, idx) => val === idx);
+
+      if (isCorrect) {
+        playVictorySound();
+        updateScore(20);
+        act7TargetItem.play();
+        speakText(`Hebat! Gambar ${act7TargetItem.name} berjaya dilengkapkan!`);
+        showFeedback(`🎉 Syabas! Puzzle <strong>${act7TargetItem.name}</strong> berjaya disusun sempurna!`, true);
+        setTimeout(renderActivity7, 3000);
+      } else {
+        playWrongSound();
+        speakText("Kedudukan puzzle kurang tepat. Cuba lagi!");
+        showFeedback("Kedudukan kepingan kurang tepat. Sila cuba lagi!", false);
+        
+        setTimeout(renderActivity7, 2000);
+      }
+    }
+
+
+    /* ==========================================================================
+       INITIALIZATION ON PAGE LOAD
+       ========================================================================== */
+    window.onload = function() {
+      showLevelSelect();
+    };
+  </script>
 </body>
 </html>
